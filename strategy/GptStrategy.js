@@ -1,17 +1,25 @@
 const ChatGptService = require("../service/ChatGptService")
 
-class GptStrategy{
+class GptStrategy {
   constructor(body) {
     this.body = body
     this.chatGptService = new ChatGptService()
   }
 
-  async isPolitian(){
-    const result = await this.chatGptService.gptResultAnalisys(this.body.data.message.conversation)
-    if(result.code === 200){
-      return result.message.isPolitico
+  async isPolitian() {
+    try {
+      const message = this.body.data.message.conversation
+      if (!message) return false
+
+      const result = await this.chatGptService.gptResultAnalisys(message)
+      if (result.code === 200) {
+        return result.message.isPolitico
+      }
+      return false
+    } catch (error) {
+      console.error("Erro ao verificar conteudo politico:", error)
+      return false
     }
-    return false
   }
 }
 

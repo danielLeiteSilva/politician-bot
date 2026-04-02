@@ -2,12 +2,13 @@ class ConditionStrategy {
   constructor(body) {
     this.body = body
   }
+
   readUsers() {
-    return [
-      "5511943666624@s.whatsapp.net",
-      "5511981030433@s.whatsapp.net",
-      "5511941434324@s.whatsapp.net"
-    ]
+    const usersEnv = process.env.MONITORED_USERS
+    if (usersEnv) {
+      return usersEnv.split(",").map(user => user.trim())
+    }
+    return []
   }
 
   isCondition() {
@@ -19,11 +20,15 @@ class ConditionStrategy {
   isEvent() {
     return this.body.event === "messages.upsert"
   }
+
   isContext() {
     return this.body.data.messageContextInfo === undefined
   }
+
   isUser() {
-    return this.readUsers().find(user => user === this.body.data.key.participant)
+    const users = this.readUsers()
+    if (users.length === 0) return true
+    return users.some(user => user === this.body.data.key.participant)
   }
 }
 

@@ -1,69 +1,69 @@
-const request = require('request')
 const DeleteModel = require('../models/DeleteModel')
 const MessageModel = require('../models/MessageModel')
-class WhatsappService {
 
+class WhatsappService {
   constructor(body) {
     this.body = body
   }
 
-  HEADERS() {
+  getHeaders() {
     return {
       'apikey': process.env.API_KEY_WHATSAPP,
       'Content-Type': 'application/json'
     }
   }
 
-  SEND_MESSAGE(){
-    const {...content} = new MessageModel(this.body)
-    console.log(content)
-    return {
-      body: JSON.stringify(content),
-      headers: this.HEADERS()
+  buildSendMessagePayload() {
+    const { ...content } = new MessageModel(this.body)
+    return JSON.stringify(content)
+  }
+
+  buildDeleteMessagePayload() {
+    const { ...deleteModel } = new DeleteModel(this.body)
+    return JSON.stringify(deleteModel)
+  }
+
+  async sendMessage() {
+    const url = `${process.env.API_ROUTE}${process.env.SEND_MESSAGE}${process.env.INSTANCE_API}`
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: this.getHeaders(),
+        body: this.buildSendMessagePayload()
+      })
+
+      if (response.ok) {
+        return await response.json()
+      }
+
+      throw new Error(`Erro ao enviar mensagem: status ${response.status}`)
+    } catch (error) {
+      console.error("Erro ao enviar mensagem:", error)
+      throw error
     }
   }
 
+  async deleteMessage() {
+    const url = `${process.env.API_ROUTE}${process.env.DELETE_ALL_MESSAGE}${process.env.INSTANCE_API}`
 
-  DELETE_MESSAGE(){
-    const {...deleteModel} = new DeleteModel(this.body)
-    return {
-      body: JSON.stringify(deleteModel),
-      headers: this.HEADERS()
+    try {
+      const response = await fetch(url, {
+        method: "DELETE",
+        headers: this.getHeaders(),
+        body: this.buildDeleteMessagePayload()
+      })
+
+      if (response.ok) {
+        return await response.json()
+      }
+
+      throw new Error(`Erro ao deletar mensagem: status ${response.status}`)
+    } catch (error) {
+      console.error("Erro ao deletar mensagem:", error)
+      throw error
     }
-  }
-
-  sendMessage() {
-    return new Promise((resolve, reject) => {
-      request.post(`${process.env.API_ROUTE}${process.env.SEND_MESSAGE}${process.env.INSTANCE_API}`, this.SEND_MESSAGE(), (error, response, body) => {
-        if (!error) {
-          if (response.statusCode === 200 || response.statusCode === 201) {
-            return resolve(body)
-          } else {
-            return reject(response.statusCode)
-          }
-        } else {
-          return reject(error)
-        }
-      })
-    })
-  }
-
-  deleteMessage() {
-    return new Promise((resolve, reject) => {
-      request.delete(`${process.env.API_ROUTE}${process.env.DELETE_ALL_MESSAGE}${process.env.INSTANCE_API}`, this.DELETE_MESSAGE(), (error, response, body) => {
-        if (!error) {
-          if (response.statusCode === 200 || response.statusCode === 201) {
-            return resolve(body)
-          } else {
-            return reject(response.statusCode)
-          }
-        } else {
-          return reject(error)
-        }
-      })
-    })
   }
 }
-
 
 module.exports = WhatsappService
