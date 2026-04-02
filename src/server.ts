@@ -1,11 +1,12 @@
-require('dotenv').config()
-const express = require('express')
-const Strategy = require('./strategy/Strategy')
-const MessageStrategy = require('./strategy/MessageStrategy')
+import "dotenv/config"
+import express, { Request, Response } from "express"
+import { Strategy } from "./strategy/Strategy"
+import { MessageStrategy } from "./strategy/MessageStrategy"
+
 const app = express()
 app.use(express.json())
 
-app.post("/webhook", async (req, res) => {
+app.post("/webhook", async (req: Request, res: Response) => {
   try {
     const strategy = new Strategy(req.body)
     await strategy.runner(MessageStrategy)
@@ -18,3 +19,5 @@ app.post("/webhook", async (req, res) => {
 
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => console.log(`Servidor conectado na porta ${PORT}`))
+
+export { app }

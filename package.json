@@ -2,7 +2,7 @@
   "name": "politician-bot",
   "version": "2.0.0",
   "description": "Bot de WhatsApp que detecta e remove conteudo politico usando ChatGPT",
-  "main": "server.js",
+  "main": "dist/server.js",
   "engines": {
     "node": ">=18.0.0"
   },
@@ -11,13 +11,28 @@
     "express": "^4.21.2"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.5.0",
+    "jest": "^30.3.0",
+    "nodemon": "^3.1.9",
+    "ts-jest": "^29.4.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.2"
   },
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
   },
-  "keywords": ["whatsapp", "bot", "chatgpt", "politica"],
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "chatgpt",
+    "politica"
+  ],
   "author": "Daniel Silva",
   "license": "ISC"
 }
