@@ -38,7 +38,7 @@ describe("GptStrategy", () => {
 
   it("should return true when message is political", async () => {
     mockGptResultAnalisys.mockResolvedValue({
-      message: { isPolitico: true },
+      isPolitico: true,
       code: 200,
     })
 
@@ -51,7 +51,7 @@ describe("GptStrategy", () => {
 
   it("should return false when message is not political", async () => {
     mockGptResultAnalisys.mockResolvedValue({
-      message: { isPolitico: false },
+      isPolitico: false,
       code: 200,
     })
 
@@ -71,8 +71,9 @@ describe("GptStrategy", () => {
 
   it("should return false when API returns error code", async () => {
     mockGptResultAnalisys.mockResolvedValue({
-      message: "Erro",
+      isPolitico: false,
       code: 500,
+      error: "Erro",
     })
 
     const strategy = new GptStrategy(createBody("qualquer texto"))

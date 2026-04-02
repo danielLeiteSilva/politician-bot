@@ -1,19 +1,37 @@
 # Politician Bot
 
-Bot de WhatsApp que detecta e remove automaticamente mensagens com conteudo politico em grupos, utilizando a API do ChatGPT para classificacao.
+Bot de WhatsApp que detecta e remove automaticamente mensagens com conteudo politico em grupos, utilizando um **MCP Server** (Model Context Protocol) para classificacao via ChatGPT.
 
 ## Como funciona
 
 ```
-WhatsApp Group ──> Webhook ──> Filtro de Condicoes ──> ChatGPT ──> Acao
-                   (POST)      (evento, contexto,      (classifica    (deleta mensagem
-                                usuario)                conteudo)      + envia aviso)
+WhatsApp Group ──> Webhook ──> Filtro ──> MCP Client ──> MCP Server ──> ChatGPT
+                   (POST)      (evento,    (chama tool)   (classify_     (classifica
+                                contexto,                  political_     conteudo)
+                                usuario)                   content)
+                                                                  ↓
+                                                           Acao (deleta + aviso)
 ```
 
 1. **Webhook** — O servidor recebe eventos de mensagens do WhatsApp via `POST /webhook`
 2. **Filtro** — Verifica se o evento e uma mensagem nova (`messages.upsert`), se nao e uma mensagem de contexto e se o usuario esta na lista de monitoramento
-3. **Classificacao** — Envia o texto da mensagem para a API do ChatGPT, que responde com `{ "isPolitico": true/false }`
-4. **Acao** — Se classificado como politico, o bot deleta a mensagem original e envia um aviso no grupo
+3. **MCP Client** — Envia o texto para o MCP Server via protocolo MCP (stdio transport)
+4. **MCP Server** — Expoe a tool `classify_political_content` que chama a API do ChatGPT e retorna `{ isPolitico: true/false, code: number }`
+5. **Acao** — Se classificado como politico, o bot deleta a mensagem original e envia um aviso no grupo
+
+### Arquitetura MCP
+
+O bot utiliza o **Model Context Protocol (MCP)** para desacoplar a logica de classificacao:
+
+- **MCP Server** (`src/mcp-server/index.ts`) — Servidor que expoe a tool `classify_political_content`. Encapsula toda a comunicacao com a API da OpenAI
+- **MCP Client** (`src/client/McpClassifierClient.ts`) — Cliente que se conecta ao MCP Server via stdio e chama a tool de classificacao
+- **ChatGptService** (`src/service/ChatGptService.ts`) — Servico que usa o MCP Client para classificar conteudo
+
+**Vantagens:**
+- Desacoplamento — O bot nao precisa saber qual LLM esta sendo usado
+- Reutilizacao — Outros projetos podem consumir o mesmo MCP Server
+- Testabilidade — Facil mockar o MCP Client nos testes
+- Flexibilidade — Troque de OpenAI para outro provedor sem alterar o bot
 
 ## Requisitos
 
@@ -149,7 +167,9 @@ npm run test:coverage
 
 | Modulo | Testes | O que testa |
 |---|---|---|
+| `McpClassifierClient` | 8 | Classificacao via MCP, erros, conexao, desconexao |
 | `ChatGptClient` | 7 | Payload, respostas OK/erro, erros de rede |
+| `MCP Server` | 4 | Payload, classificacao politica, erros de API e rede |
 | `DeleteModel` | 1 | Extracao de propriedades do webhook |
 | `ConditionMessageStrategy` | 11 | readUsers, isEvent, isContext, isUser, isCondition |
 | `GptStrategy` | 5 | Classificacao politica, mensagem undefined, erros |
@@ -164,14 +184,19 @@ politician-bot/
 │   ├── server.ts                  # Servidor Express + endpoint webhook
 │   ├── types.ts                   # Interfaces TypeScript (WebhookBody, etc.)
 │   ├── client/
-│   │   ├── ChatGptClient.ts       # Cliente HTTP para a API do ChatGPT
-│   │   └── ChatGptClient.test.ts
+│   │   ├── ChatGptClient.ts       # Cliente HTTP para a API do ChatGPT (legado)
+│   │   ├── ChatGptClient.test.ts
+│   │   ├── McpClassifierClient.ts # Cliente MCP para classificacao politica
+│   │   └── McpClassifierClient.test.ts
+│   ├── mcp-server/
+│   │   ├── index.ts               # MCP Server com tool classify_political_content
+│   │   └── index.test.ts
 │   ├── models/
 │   │   ├── DeleteModel.ts         # Modelo para deletar mensagem
 │   │   ├── DeleteModel.test.ts
 │   │   └── MessageModel.ts        # Modelo para enviar mensagem de aviso
 │   ├── service/
-│   │   ├── ChatGptService.ts      # Servico de analise via ChatGPT
+│   │   ├── ChatGptService.ts      # Servico de analise via MCP Client
 │   │   └── WhatsappService.ts     # Servico de envio/delecao no WhatsApp
 │   └── strategy/
 │       ├── Strategy.ts            # Runner de estrategias
@@ -204,7 +229,9 @@ politician-bot/
 
 - **TypeScript** — Tipagem estatica
 - **Express** — Servidor HTTP
-- **OpenAI API** — Classificacao de conteudo via ChatGPT
+- **MCP SDK** — Model Context Protocol para integracao com LLMs
+- **OpenAI API** — Classificacao de conteudo via ChatGPT (dentro do MCP Server)
+- **Zod** — Validacao de schemas para tools MCP
 - **Jest** — Testes unitarios
 - **Node.js fetch** — Requisicoes HTTP (nativo do Node 18+)
 
