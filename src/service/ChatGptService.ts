@@ -1,15 +1,19 @@
-import { ChatGptClient, GptResponse } from "../client/ChatGptClient"
+import { McpClassifierClient, ClassificationResult } from "../client/McpClassifierClient"
 
 export class ChatGptService {
-  private chatGptClient: ChatGptClient
+  private mcpClient: McpClassifierClient
 
-  constructor() {
-    this.chatGptClient = new ChatGptClient()
+  constructor(mcpClient?: McpClassifierClient) {
+    this.mcpClient = mcpClient || new McpClassifierClient()
   }
 
-  async gptResultAnalisys(information: string): Promise<GptResponse> {
-    const result = await this.chatGptClient.gptAnalisysText(information)
+  async gptResultAnalisys(information: string): Promise<ClassificationResult> {
+    const result = await this.mcpClient.classifyText(information)
     console.log(`**RESULT** ${JSON.stringify(result)}`)
     return result
+  }
+
+  async disconnect(): Promise<void> {
+    await this.mcpClient.disconnect()
   }
 }

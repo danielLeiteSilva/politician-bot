@@ -5,9 +5,9 @@ export class GptStrategy {
   private body: WebhookBody
   private chatGptService: ChatGptService
 
-  constructor(body: WebhookBody) {
+  constructor(body: WebhookBody, chatGptService?: ChatGptService) {
     this.body = body
-    this.chatGptService = new ChatGptService()
+    this.chatGptService = chatGptService || new ChatGptService()
   }
 
   async isPolitian(): Promise<boolean> {
@@ -16,8 +16,8 @@ export class GptStrategy {
       if (!message) return false
 
       const result = await this.chatGptService.gptResultAnalisys(message)
-      if (result.code === 200 && typeof result.message !== "string") {
-        return result.message.isPolitico
+      if (result.code === 200) {
+        return result.isPolitico
       }
       return false
     } catch (error) {
