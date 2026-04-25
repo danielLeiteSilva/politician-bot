@@ -10,7 +10,11 @@
     "@modelcontextprotocol/sdk": "^1.29.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "joi": "^17.11.0",
+    "winston": "^3.11.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
@@ -20,14 +24,25 @@
     "nodemon": "^3.1.9",
     "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "@typescript-eslint/eslint-plugin": "^6.9.0",
+    "@typescript-eslint/parser": "^6.9.0",
+    "eslint": "^8.52.0",
+    "eslint-plugin-security": "^1.7.1",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.0.2"
   },
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
     "test": "jest",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "security-check": "node scripts/security-check.js",
+    "pre-commit": "npm run security-check && npm run lint && npm test",
+    "prepare": "husky install"
   },
   "keywords": [
     "whatsapp",
@@ -36,5 +51,17 @@
     "politica"
   ],
   "author": "Daniel Silva",
-  "license": "ISC"
+  "license": "ISC",
+  "lint-staged": {
+    "*.{ts,js}": [
+      "npm run lint:fix",
+      "npm run security-check"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "pre-push": "npm run security-check && npm test"
+    }
+  }
 }
